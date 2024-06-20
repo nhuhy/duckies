@@ -46,40 +46,50 @@ function App() {
 
   const handleBodyClick = (e) => {
     const bodyRect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - bodyRect.left - 25;
-    const y = e.clientY - bodyRect.top - 25;
+    const x = e.clientX - bodyRect.left - 25; // Adjust this based on your duck image size
+    const y = e.clientY - bodyRect.top - 25;  // Adjust this based on your duck image size
 
     const newClickCount = clickCount + 1;
     setClickCount(newClickCount);
 
-    const closeDucks = ducks.filter(duck => isCloseToDuck(duck, x, y));
+    const closeDucks = ducks.filter((duck) => isCloseToDuck(duck, x, y));
     if (closeDucks.length > 0) {
       // Calculate the bounding box to cover all close ducks
       let minX = x;
       let maxX = x;
       let minY = y;
       let maxY = y;
-  
-      closeDucks.forEach(duck => {
+
+      closeDucks.forEach((duck) => {
         if (duck.x < minX) minX = duck.x;
-        if (duck.x > maxX) maxX = duck.x;
+        if (duck.x + duck.width > maxX) maxX = duck.x + duck.width;
         if (duck.y < minY) minY = duck.y;
-        if (duck.y > maxY) maxY = duck.y;
+        if (duck.y + duck.height > maxY) maxY = duck.y + duck.height;
       });
-  
+
       // Remove close ducks
-      const updatedDucks = ducks.filter(duck => !isCloseToDuck(duck, x, y));
-  
-      // Add a new larger duck with a randomly selected type
-      const newDuckType = closeDucks[0].type;
-      const newDuck = { x: minX, y: minY, width: maxX - minX + 50, height: maxY - minY + 50, type: newDuckType };
-  
+      const updatedDucks = ducks.filter((duck) => !isCloseToDuck(duck, x, y));
+      let highestRarityType = closeDucks[0].type;
+      let highestRarityWeight = duckImages.findIndex(img => img === highestRarityType); // Initial weight
+
+      closeDucks.forEach(duck => {
+        const duckTypeIndex = duckImages.findIndex(img => img === duck.type);
+        if (duckTypeIndex > highestRarityWeight) {
+          highestRarityType = duck.type;
+          highestRarityWeight = duckTypeIndex;
+        }
+      }); const aspectRatio = closeDucks[0].width / closeDucks[0].height;
+      const newWidth = maxX - minX + 50;
+      const newHeight = newWidth / aspectRatio;
+      const newDuck = { x: minX, y: minY, width: newWidth, height: newHeight, type: highestRarityType, currentImage: highestRarityType.sit };
+
+
       // Update the ducks state
       setDucks([...updatedDucks, newDuck]);
-  
+
       // Immediately update the currentImage of the merged duck
-      setDucks(prevDucks => {
-        const updatedIndex = prevDucks.findIndex(d => d === newDuck);
+      setDucks((prevDucks) => {
+        const updatedIndex = prevDucks.findIndex((d) => d === newDuck);
         if (updatedIndex !== -1) {
           const { front, sit, left, right } = newDuck.type;
           const newFront = sit; // Assuming sit is the next state after front
@@ -89,18 +99,20 @@ function App() {
         }
         return prevDucks;
       });
-  
     } else {
       // Add a new duck with a randomly selected type
-      const randomDuckType = duckImages[Math.floor(Math.random() * duckImages.length)];
-      setDucks([...ducks, { x, y, width: 50, height: 50, type: randomDuckType, currentImage: randomDuckType.front }]);
+      const randomDuckType = generateRandomDuckType();
+      setDucks([
+        ...ducks,
+        { x, y, width: 50, height: 50, type: randomDuckType, currentImage: randomDuckType.front },
+      ]);
     }
-  
 
     if (newClickCount === 2) {
       setShowMergeMessage(true);
     }
   };
+
 
   const isCloseToDuck = (duck, x, y) => {
     const threshold = 50;
@@ -112,12 +124,36 @@ function App() {
     );
   };
 
-  const changeImage = () => {
-    setDucks(prevDucks =>
-      prevDucks.map(duck => {
-        const { front, sit, left, leftSit, right, rightSit } = duck.type;
-        let newFront;
 
+  const generateRandomDuckType = () => {
+    // Define rarity weights (adjust as needed)
+    const weights = [8, 3, 2, 1]; // Example weights: first duck type is most common, last is rarest
+
+    // Calculate total weight sum
+    const totalWeight = weights.reduce((acc, weight) => acc + weight, 0);
+
+    // Generate random number within total weight range
+    let randomNumber = Math.floor(Math.random() * totalWeight);
+
+    // Determine which duck type corresponds to the random number
+    let cumulativeWeight = 0;
+    for (let i = 0; i < duckImages.length; i++) {
+      cumulativeWeight += weights[i];
+      if (randomNumber < cumulativeWeight) {
+        return duckImages[i];
+      }
+    }
+    // Fallback (should not happen if weights are correctly defined)
+    return duckImages[0];
+  };
+
+  const changeImage = () => {
+    setDucks((prevDucks) =>
+      prevDucks.map((duck) => {
+        const { front, sit, left, leftSit, right, rightSit } = duck.type;
+
+        // Determine the next image based on current state
+        let newFront;
         if (duck.currentImage === front) {
           newFront = sit;
         } else if (duck.currentImage === sit) {
@@ -128,8 +164,7 @@ function App() {
           newFront = right;
         } else if (duck.currentImage === right) {
           newFront = rightSit;
-        }
-        else {
+        } else {
           newFront = front;
         }
 
@@ -138,10 +173,22 @@ function App() {
     );
   };
 
+
+
+
   useEffect(() => {
     const intervalId = setInterval(changeImage, 1000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [showMergeMessage]); // Add showMergeMessage as a dependency to useEffect
+
+
+  const clearDucks = (e) => {
+    e.stopPropagation();
+    console.log("Clearing ducks...");
+    setDucks([]);
+    console.log("Ducks state after clearing:", ducks); // Check ducks state after setting to []
+    setClickCount(0);
+  };
 
   return (
     <div className="App">
@@ -151,7 +198,7 @@ function App() {
       </header>
       <main className="App-body" onClick={handleBodyClick}>
         <div className="body-content">
-          <p>Click on the screen to create a ducky. <br /></p>
+          <h4>Click on the screen to create a ducky. <br /></h4>
           {ducks.map((duckPosition, index) => (
             <img
               key={index}
@@ -169,9 +216,10 @@ function App() {
         </div>
         {showMergeMessage && (
           <div className="merge-message">
-            <p>You can merge ducks by placing them close together. Enjoy making different size ducks!</p>
+            <h4>You can create even larger ducks by clicking around existing ducks.</h4><h4> There are also some special duck types to discover. Enjoy making different size ducks!</h4>
           </div>
         )}
+        <button className="clear-button" onClick={clearDucks}>Clear Ducks</button>
       </main>
       <footer className="App-footer">
         <a

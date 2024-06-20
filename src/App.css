@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -13,10 +14,6 @@ html, body {
   flex-direction: column;
 }
 
-h1 {
-  -webkit-text-stroke-width: 1px;
-  -webkit-text-stroke-color: #b08f00;
-}
 
 .App {
   display: flex;
@@ -32,12 +29,26 @@ h1 {
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: #ffd417;
+  text-shadow: 1px 1px 2px #b08f00, 0 0 1px #b08f00, 0 0 0.2px #b08f00;
+
 
   /* Updated background styles */
-  background-image: url('./img/header.jpeg');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-color: #ccfa58;
+  box-shadow: 0 -6px 50px 5px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 2;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Adjust opacity as needed */
+  z-index: 1;
+  /* Place the overlay below the header */
 }
 
 .App-body {
@@ -48,9 +59,10 @@ h1 {
   position: relative;
   flex-direction: column;
   color: white;
+  text-shadow: 3px 1px 4px grey, 0 0 3px grey, 0 0 0.2px grey;
 
   /* Updated background styles */
-  background-image: url('./img/beach.gif');
+  background-image: url('./img/grass.jpeg');
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
@@ -63,16 +75,18 @@ h1 {
   align-items: center;
   justify-content: center;
   color: white;
-  background-color: #ccbca5;
+  text-shadow: 1px 1px 2px grey, 0 0 1px grey, 0 0 0.2px grey;
+
+  background-color: #6bd847;
 }
 
 .App-link {
-  color: #78a17a;
+  color: white;
 }
 
 .App-logo {
   height: 10vmin;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .duck {
@@ -80,6 +94,43 @@ h1 {
   width: 50px;
   height: 50px;
   pointer-events: none;
-  transition: transform 0.5s;
+  transition: all 0.5s ease;
 }
 
+
+.clear-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 18px;
+  font-family: 'Bebas Neue', sans-serif;
+  background-color: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.clear-button:hover {
+  background-color: #e04050;
+  transform: translateY(-2px);
+}
+
+.clear-button:active {
+  background-color: #c43545;
+  transform: translateY(1px);
+}
+
+@keyframes mergeAnimation {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(var(--mergeX), var(--mergeY));
+  }
+}
+
+.merging-duck {
+  animation: mergeAnimation 1s forwards;
+}
